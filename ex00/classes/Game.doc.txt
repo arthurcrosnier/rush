@@ -1,0 +1,174 @@
+<<<<<<< HEAD
+<?php
+
+class Game extends Base
+{
+	protected $ships = array();
+	protected $blocks = array();
+	protected $players = array();
+	protected $currentPlayer;
+	protected $locked = false;
+	const FILE = '/../game.txt';
+
+	public function __construct()
+	{
+		$this->setCurrentPlayer(0);
+	}
+
+	public function hasCollision(MapObject $o)
+	{
+		$collisionMatrix = new CollisionMatrix(GAME_NUM_ROWS, GAME_NUM_COLS);
+		foreach ($this->getShips() as $s)
+		{
+			if ($s !== $o)
+				$collisionMatrix->addObject($s);
+		}
+		foreach ($this->getBlocks() as $b)
+		{
+			if ($b !== $o)
+				$collisionMatrix->addObject($b);
+		}
+		return $collisionMatrix->collision($o);
+	}
+
+	// lock players, ships and blocks so the game can start
+	public function lock()
+	{
+		$this->setLocked(true);
+	}
+
+	public function addShip(Ship $ship)
+	{
+		if ($this->getLocked())
+			throw new Exception('Cannot add ship as game is locked.');
+		$this->ships[] = $ship;
+	}
+
+	public function addBlock(Block $block)
+	{
+		if ($this->getLocked())
+			throw new Exception('Cannot add block as game is locked.');
+		$this->blocks[] = $block;
+	}
+
+	public function addPlayer(Player $player)
+	{
+		if ($this->getLocked())
+			throw new Exception('Cannot add player as game is locked.');
+		$this->players[] = $player;
+	}
+
+	public function start()
+	{
+		$this->lock();
+		$this->playTurn();
+	}
+
+	// deletes the current game
+	public function reload()
+	{
+		@unlink(__DIR__ . self::FILE);
+	}
+
+	private function updateCurrentPlayer()
+	{
+		if (count($this->players) > $this->currentPlayer)
+			$this->currentPlayer++;
+		else
+			$this->currentPlayer = 0;
+	}
+
+	public function playTurn()
+	{
+		if (!$this->getLocked())
+			throw new Exception('Cannot play a turn while the game is unlocked.');
+		$this->updateCurrentPlayer();
+	}
+
+	public function save()
+	{
+		@file_put_contents(__DIR__ . self::FILE, serialize($this));
+	}
+
+	static public function exists()
+	{
+		return @file_exists(__DIR__ . self::FILE);
+	}
+
+	static public function loadFromFile()
+	{
+		return unserialize(file_get_contents(__DIR__ . self::FILE));
+	}
+
+	public function toJson()
+	{
+		$objects = array();
+		foreach ($this->getShips() as $s)
+			$objects[] = $s->toJson();
+		foreach ($this->getBlocks() as $b)
+			$objects[] = $b->toJson();
+		return $objects;
+	}
+
+Ship[] playerShips(Player $p)
+
+
+Ship[] currentPlayerShips()
+=======
+The Game class represents the internal state of a game. A Game
+has the following concepts:
+* players: they are the owners of ships and can battle against
+each other. They can be either active or passive, like the
+Switzerland player ! :-)
+* ships: combat units owned by the players.
+* blocks: obstacles on the map that are very hard to get rid of
+and can break a ship that collides with them.
+
+A game instance can be constructed like so:
+$game = new Game();
+
+Class methods:
+
+static bool exists()
+Check if a game in in progress.
+
+static void loadFromFile()
+Load a game from its save file.
+
+These are the public instance methods:
+
+bool hasCollision(MapObject $o)
+Checks if the MapObject can be placed in the game. Returns true if
+it is possible or false if it would create a collision.
+
+void addShip(Ship $ship)
+Adds the $ship to the Game.
+
+void addBlock(Block $block)
+Adds the $block to the Game.
+
+void addPlayer(Player $player)
+Adds the Player to the game.
+
+void start()
+Locks the game for registrations and plays the first turn.
+
+void reload()
+Deletes the currently saved game.
+
+void playTurn()
+Allow the next player to play his turn.
+
+void save()
+Saves the game to '../game.txt'.
+
+string toJson()
+Returns the ships and blocks as a JSON-able object.
+
+Ship[] playerShips(Player $p)
+Returns the ships that belong to a given player.
+
+Ship[] currentPlayerShips()
+Returns the ships that belong to the player that is currently playing,
+based on the session.
+>>>>>>> aa25931e627ce2c0a1512d3314f75a747091b47f
